@@ -1,2 +1,2 @@
 # EllpacaEscapeAtlas
-gere we generate highlighter plots and escape logos for the Ellpca alignments
+Here we generate highlighter plots and escape logos for the Ellpca alignments
