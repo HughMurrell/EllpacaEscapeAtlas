@@ -500,14 +500,12 @@ in_files = readdir(in_dir)
 in_files=in_files[(x->endswith(x,".fasta")).(in_files)]
 in_paths = in_dir .* in_files
 
-@show in_paths
-
 work_dir = "working/"
 mkpath(work_dir)
-out_dir = "plots/"
+out_dir = "VRC01_induced_highlighter_plots/"
 mkpath(out_dir)
 
-for in_path in in_paths[end-5:end]
+for in_path in in_paths[1:end]
     donor = basename(in_path)[1:6]
     println("$(donor).......")
     col_path = work_dir * "$(donor)_aa_alignment_noref_collapsed.fasta"
