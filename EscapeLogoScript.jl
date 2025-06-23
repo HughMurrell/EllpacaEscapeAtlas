@@ -260,106 +260,80 @@ end
 
 function luxor_sequence_logo_aa(ref_logo::Union{Nothing, SequenceLogo},
                                 bot_logo::SequenceLogo, 
-                                mid_logo::Union{Nothing, SequenceLogo},
-                                top_logo::SequenceLogo, 
-                                color_fun, logo_length, font_size, path_png; 
+                                # mid_logo::Union{Nothing, SequenceLogo},
+                                freq_logos::Vector{Any},
+                                color_fun, logo_length, font_size, path_svg;
                                 thresh=0, remove_duplicate_letters=true, annot=[], 
                                 scale_factor=1,exploded=true,
                                 title="Escape Logo", 
                                 ref_annot="",
                                 bot_annot="consensus", 
-                                mid_annot="escapees",
-                                top_annot="escape frequencies")
+                                freq_annots=[])
+    lh=40
     sym_gap=2/5
     freq_scale=2
     offset=14*font_size*(1-sym_gap)  # used to be 13*
-    println("generating logo in $(path_png)")
-    p=Drawing((logo_length+14)*font_size*(1-sym_gap), 200, path_png, strokescale=true)
+    println("generating logo in $(path_svg)")
+    p=Drawing((logo_length+14)*font_size*(1-sym_gap), 100 + lh*length(freq_logos) + 75, path_svg, strokescale=true)
     fontface("Menlo")   # Punch, Menlo, Courier
     fontsize(font_size)
     setline(1)
     gsave()
-    fontsize(font_size/2)
     text(title,Point(offset,2*font_size))
-    text(top_annot,Point(font_size,100+font_size-font_size-font_size))
-    text(mid_annot,Point(font_size,108+font_size-font_size/3))
-    text(bot_annot,Point(font_size,130+font_size))
+    fontsize(font_size/2)
+    for freq_ind in 1:length(freq_annots)
+        text(freq_annots[freq_ind],Point(font_size,80+lh*freq_ind-font_size))
+    end
+    @show bot_annot
+    text(bot_annot,Point(font_size,80+lh*(length(freq_logos)+1)-lh/2))
     text(ref_annot,Point(font_size,130+font_size))
     fontsize(font_size)
     
-    # first do the top logo grid lines
-    Luxor.translate(offset,100+font_size-font_size)
-    ygs=[0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0]
-    setline(1)
-    setdash("solid")
-    setcolor("grey80")
-    for yg in ygs
-        line(Point(0, -yg*font_size),Point((logo_length)*font_size*(1-sym_gap),-yg*font_size),action = :stroke)
-        setdash("dot")
-    end
-    setdash("solid")
-    line(Point(0, -font_size*freq_scale),Point((logo_length)*font_size*(1-sym_gap),-font_size*freq_scale),
+    for freq_ind in 1:length(freq_logos)
+        # first do the freq logo grid lines
+        grestore()
+        gsave()
+        Luxor.translate(offset,80 + lh*freq_ind + font_size - font_size)
+        ygs=[0.0,0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0]
+        setline(1)
+        setdash("solid")
+        setcolor("grey80")
+        for yg in ygs
+            line(Point(0, -yg*font_size),Point((logo_length)*font_size*(1-sym_gap),-yg*font_size),action = :stroke)
+            setdash("dot")
+        end
+        setdash("solid")
+        line(Point(0, -font_size*freq_scale),Point((logo_length)*font_size*(1-sym_gap),-font_size*freq_scale),
                         action = :stroke)
-    # now do the top logo
-    sorted_logo = sort_letters(top_logo; remove_duplicates=remove_duplicate_letters)
-    y_min = y_max = 0.0
-    for (x, site) in enumerate(sorted_logo.sites)
-        y_pos = y_neg = 0.0
-        for weighted_letter in site.weighted_letters
-            w = abs(weighted_letter.weight*freq_scale)
-            l = weighted_letter.letter
-            w ≤ thresh && continue
-            if weighted_letter.weight > 0
-                luxor_letter_at(l, color_fun(l), w, font_size)
-                y_pos += w
-                Luxor.translate(0,-w*font_size)
-            elseif weighted_letter.weight < 0
-                println("******* negative y shift *************")
-                y_neg -= w
-                luxor_letter_at(l, color_fun(l), w, font_size)
+        # now do the freq logo
+        sorted_logo = sort_letters(freq_logos[freq_ind]; remove_duplicates=remove_duplicate_letters)
+        y_min = y_max = 0.0
+        for (x, site) in enumerate(sorted_logo.sites)
+            y_pos = y_neg = 0.0
+            for weighted_letter in site.weighted_letters
+                w = abs(weighted_letter.weight*freq_scale)
+                l = weighted_letter.letter
+                w ≤ thresh && continue
+                if weighted_letter.weight > 0
+                    luxor_letter_at(l, color_fun(l), w, font_size)
+                    y_pos += w
+                    Luxor.translate(0,-w*font_size)
+                elseif weighted_letter.weight < 0
+                    println("******* negative y shift *************")
+                    y_neg -= w
+                    luxor_letter_at(l, color_fun(l), w, font_size)
+                end
             end
+            Luxor.translate(0,y_pos*font_size)
+            Luxor.translate((1-sym_gap)*font_size, 0)
         end
-        Luxor.translate(0,y_pos*font_size)
-        Luxor.translate((1-sym_gap)*font_size, 0)
     end
     
-    # draw the exploded mid-logo escapees 
-    grestore()
-    gsave()
-    Luxor.translate(offset,115+font_size)
-    setline(1)
-    setcolor("grey80")
-    setdash("solid")
-    # line(Point(0, -2*font_size),Point((logo_length)*font_size*(1-sym_gap),-2*font_size),action = :stroke)
-
-    sorted_logo = sort_letters(mid_logo; remove_duplicates=remove_duplicate_letters)
-    y_min = y_max = 0.0
-    for (x, site) in enumerate(sorted_logo.sites)
-        y_pos = y_neg = 0.0
-        for weighted_letter in site.weighted_letters
-            w = abs(weighted_letter.weight*freq_scale)
-            l = weighted_letter.letter
-            w ≤ thresh && continue
-            if weighted_letter.weight > 0
-                luxor_letter_at(l, color_fun(l), w, font_size)
-                y_pos += w
-                Luxor.translate(0,-w*font_size)
-            elseif weighted_letter.weight < 0
-                println("******* negative y shift *************")
-                y_neg -= w
-                luxor_letter_at(l, color_fun(l), w, font_size)
-            end
-        end
-        Luxor.translate(0,y_pos*font_size)
-        Luxor.translate((1-sym_gap)*font_size, 0)
-    end
-    
-    
+   
     # now return to origin and do the bottom logo
     grestore()
     gsave()
-    Luxor.translate(offset,130+font_size)
-    # transform([1 0 0 -1 0 0])
+    Luxor.translate(offset,80 + lh*(length(freq_logos)+1) - lh/2)
     
     sorted_logo = sort_letters(bot_logo; remove_duplicates=remove_duplicate_letters)
     y_min = y_max = 0.0
@@ -436,24 +410,24 @@ function luxor_sequence_logo_aa(ref_logo::Union{Nothing, SequenceLogo},
     # setcolor("grey80")
     # line(Point(offset, 0),Point((logo_length+12)*font_size*(1-sym_gap),0),action = :stroke)
     # Point((logo_length)*font_size*(1-sym_gap)
+    # grestore()
+    # gsave()
+    # Luxor.translate(0,131+font_size)
+    # setline(1)
+    # setcolor("grey80")
+    # line(Point(offset, 0),Point((logo_length+14)*font_size*(1-sym_gap),0),action = :stroke)
     grestore()
     gsave()
-    Luxor.translate(0,131+font_size)
-    setline(1)
-    setcolor("grey80")
-    line(Point(offset, 0),Point((logo_length+14)*font_size*(1-sym_gap),0),action = :stroke)
-    grestore()
-    gsave()
-    Luxor.translate(0,116+font_size)
-    setline(1)
-    setcolor("grey80")
-    line(Point(offset, 0),Point((logo_length+14)*font_size*(1-sym_gap),0),action = :stroke)
-    grestore()
-    gsave()
-    Luxor.translate(0,86+font_size)
+    Luxor.translate(0,106+font_size)
     setline(1)
     setcolor("grey80")
     # line(Point(offset, 0),Point((logo_length+14)*font_size*(1-sym_gap),0),action = :stroke)
+    grestore()
+    gsave()
+    Luxor.translate(0,80 + lh*(length(freq_logos)+1) -lh/2 + 1)
+    setline(1)
+    setcolor("grey80")
+    line(Point(offset, 0),Point((logo_length+14)*font_size*(1-sym_gap),0),action = :stroke)
     finish()
     return (p)
 end
@@ -527,11 +501,8 @@ end
 (aa_color_fun).(collect(aas))
 
 
-function generate_logo_frames(fasta_path, ept, outdir; file_count=0, prefix="")
-    logo_frames=[]
-    progress_bar=" "
-    donor=""
-    donor=basename(fasta_path)[1:end-6]
+function generate_logo(fasta_path, ept, outdir; file_count=0, prefix="")
+    donor=basename(fasta_path)[1:6]
     @show(donor)
     records = collect(FASTX.FASTA.Reader(open(fasta_path)))
     all_seqs = (x->FASTX.sequence(String,x)).(records)
@@ -604,6 +575,8 @@ function generate_logo_frames(fasta_path, ept, outdir; file_count=0, prefix="")
     @show fvsc
     
     p=nothing
+    freq_logos=[]
+    freq_annots=[]
     for visit in visits
         sel_ind = [ ]
         sel_ind = [ split(nm,"_")[2][1:4] == visit for nm in rest_nams ]
@@ -618,48 +591,24 @@ function generate_logo_frames(fasta_path, ept, outdir; file_count=0, prefix="")
         sites = [ SequenceLogoSite( (x->WeightedLetter(x...)).(zip(collect(aas),cons[:,i])) )  
                     for i in 1:size(cons)[2] ]
         freq_logo = SequenceLogo(sites);
+        push!(freq_logos,freq_logo)
+        freq_annot=" Variants at $(visit) ($(lvsc))";
+        push!(freq_annots, freq_annot)
+    end
 
-        max_ssp=1
-        esc_logo=nothing
-
-        for scale in 2:25
-            p = (x->log(2,x+1)).(p)
-        end
-        ssp = sum(p[1:21,:],dims=1).+0.001
-        count_escapees = sum( (x->x>0.001).(p),dims=1 )
-        scale_escapees=count_escapees ./ max(4,maximum(count_escapees))
-        # max_ssp = maximum(ssp)+0.001
-        # ssp = (x->max_ssp).(ssp)
-        p=p./ssp
-        contract = (x->0.9).(ssp)
-        p=(p.*contract).* scale_escapees
-        cons=p
-        sites = [ SequenceLogoSite( (x->WeightedLetter(x...)).(zip(collect(aas),cons[:,i])) )  
-                for i in 1:size(cons)[2] ]
-        esc_logo = SequenceLogo(sites)
-
-        #path_png="../../../LyleDatasets/704/V704_escapelogos/$(donor)_$(visit).svg"
-        path_png="$(outdir)$(donor)_timepoint_$(visit).svg"
-        # if file_count>0
-        #     # path_png="$(outdir)$(prefix)escape_$(file_count).svg" #uncomment for animations
-        #     file_count+=1
-        # end
-        progress_bar=progress_bar*">"
-        title="$(donor)_timepoint_$(visit)"
-        if length(progress_bar) > 0  # use 2 for 2 tp HTVN
-            pf=luxor_sequence_logo_aa(ref_logo,cons_logo,esc_logo,freq_logo,
-                aa_color_fun,size(cons)[2],20,path_png,
+    path_svg="$(outdir)$(donor)_escape_logo.svg"
+        
+    title="$(donor) escape at VRC01 epitope"
+       
+    pf=luxor_sequence_logo_aa(ref_logo,cons_logo,reverse(freq_logos),
+                aa_color_fun,size(cons)[2],20,path_svg,
                 annot=ept_annot,
                 title=title, 
                 # ref_annot="$(all_nams[1][1:15])",
-                bot_annot=" Consensus ($(visits[1]))($(fvsc))",
-                mid_annot=" Variant sites ($(visit))($(lvsc))",
-                top_annot=" Variants at ($(visit))($(lvsc))");
-            logo_frames=vcat(logo_frames,[path_png])
-        end
-    end
-    # return(file_count)
-    return(logo_frames)
+                bot_annot=" Consensus at $(visits[1]) ($(fvsc))",
+                freq_annots=reverse(freq_annots));
+            
+    return(pf)
 end
 
 ################# functions for generating alignments ##########################
@@ -818,7 +767,7 @@ ept = ept
 ########################## set GAPPY_CUTOFF cutoff here ############################
 # 1.0 keeps all sequences, try 0.05 here to get rid of sequences with > 5% gapyness
 
-const GAPPY_CUTOFF = 0.05
+const GAPPY_CUTOFF = 1.0 # 0.05
 
 # produce logo plots for each alignment file showing escape from
 # consensus at tp1, for all timepoints
@@ -848,20 +797,10 @@ end
 mkpath(out_dir)
 
 count=0
-for filepath in filepaths[1:1]
+for filepath in filepaths[1:end]
     println(filepath)
     global count+=1
-    generate_logo_frames(filepath, ept,out_dir,file_count=count,prefix="")
-end
-
-# exit()
-
-# code to get rid or timepoint 1 escape logos if they are not needed
-filepaths = readdir(out_dir)
-filepaths = out_dir .* filepaths[(x->endswith(x,"timepoint_1.svg")).(filepaths)]
-for filepath in filepaths
-    cmd = `rm $(filepath)`
-    run(cmd)
+    generate_logo(filepath, ept,out_dir,file_count=count,prefix="")
 end
 
 @show count
