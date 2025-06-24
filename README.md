@@ -3,8 +3,10 @@
 Here we generate highlighter plots and escape logos for the Ellpca alignments
 and then combine them into one svg plot per donor:
 
-First edit the4 Highlighter and EscapeLogo scripts to select the
-appropriate epitope, input and output directories and then run as follows:
+First, install `julia` and the relavent packages as usual then
+edit `HighlighterScript.jl` and `EscapeLogoScript.jl` scripts to 
+select the appropriate epitope and input and output directories 
+and then run the scripts as follows:
 
 ```
 julia HighlighterScript.jl
