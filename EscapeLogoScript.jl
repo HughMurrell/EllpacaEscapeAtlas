@@ -279,7 +279,7 @@ function luxor_sequence_logo_aa(ref_logo::Union{Nothing, SequenceLogo},
     fontsize(font_size)
     setline(1)
     gsave()
-    text(title,Point(offset,2*font_size))
+    text(title,Point(font_size,3*font_size))
     fontsize(font_size/2)
     for freq_ind in 1:length(freq_annots)
         text(freq_annots[freq_ind],Point(font_size,80+lh*freq_ind-font_size))
@@ -501,7 +501,7 @@ end
 (aa_color_fun).(collect(aas))
 
 
-function generate_logo(fasta_path, ept, outdir; file_count=0, prefix="")
+function generate_logo(fasta_path, ept, ept_name, outdir; file_count=0, prefix="")
     donor=basename(fasta_path)[1:6]
     @show(donor)
     records = collect(FASTX.FASTA.Reader(open(fasta_path)))
@@ -596,9 +596,9 @@ function generate_logo(fasta_path, ept, outdir; file_count=0, prefix="")
         push!(freq_annots, freq_annot)
     end
 
-    path_svg="$(outdir)$(donor)_escape_logo.svg"
+    path_svg="$(outdir)$(donor)_$(ept_name)_escape_logo.svg"
         
-    title="$(donor) escape at VRC01 epitope"
+    title="$(donor) escape at $(ept_name) epitope"
        
     pf=luxor_sequence_logo_aa(ref_logo,cons_logo,reverse(freq_logos),
                 aa_color_fun,size(cons)[2],20,path_svg,
@@ -704,19 +704,27 @@ end
 ##################### set the epitope coordinartes ####################
 
 # default epitope
-ept = Dict()
-ept[1]=197:198
-ept[2]=230:230
-ept[3]=276:276
-ept[4]=278:282
-ept[5]=365:371
-ept[6]=427:428
-ept[7]=430:430
-ept[8]=455:463
-ept[9]=465:465
-ept[10]=467:467
-ept[11]=469:469
-ept[12]=471:474
+ept_VRC01 = Dict()
+ept_VRC01[1]=197:198
+ept_VRC01[2]=230:230
+ept_VRC01[3]=276:276
+ept_VRC01[4]=278:282
+ept_VRC01[5]=365:371
+ept_VRC01[6]=427:428
+ept_VRC01[7]=430:430
+ept_VRC01[8]=455:463
+ept_VRC01[9]=465:465
+ept_VRC01[10]=467:467
+ept_VRC01[11]=469:469
+ept_VRC01[12]=471:474
+
+# CAP256 epitope
+ept_CAP256 = Dict()
+ept_CAP256[1] = 156:163
+ept_CAP256[2] = 166:167
+ept_CAP256[3] = 169:170
+ept_CAP256[4] = 178:179
+ept_CAP256[5] = 181:184
 
 # 3L6:
 ept_3L6 = Dict()
@@ -728,8 +736,6 @@ ept_3L6[5]=330:330
 ept_3L6[6]=332:332
 ept_3L6[7]=439:442
 ept_3L6[8]=444:446
-
- 
 
 # 3D14_1E7:
 ept_3D14_1E7=Dict()
@@ -762,7 +768,8 @@ println()
 
 ##################### override epitope settings here ####################
 
-ept = ept
+ept = ept_CAP256
+ept_name = "CAP256"
 
 ########################## set GAPPY_CUTOFF cutoff here ############################
 # 1.0 keeps all sequences, try 0.05 here to get rid of sequences with > 5% gapyness
@@ -789,7 +796,7 @@ if length(filepaths) == 0
     exit()
 end
 
-out_dir="VRC01_escape_logo_plots/"
+out_dir="$(ept_name)_escape_logo_plots/"
 if length(ARGS) > 1
     out_dir=ARGS[2]
     endswith(out_dir,"/") ? nothing : out_dir=out_dir*"/"
@@ -800,7 +807,7 @@ count=0
 for filepath in filepaths[1:end]
     println(filepath)
     global count+=1
-    generate_logo(filepath, ept,out_dir,file_count=count,prefix="")
+    generate_logo(filepath, ept, ept_name, out_dir, file_count=count, prefix="")
 end
 
 @show count

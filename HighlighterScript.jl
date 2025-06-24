@@ -22,6 +22,44 @@ ept_VRC01[10]=467:467
 ept_VRC01[11]=469:469
 ept_VRC01[12]=471:474
 
+# CAP256 epitope
+ept_CAP256 = Dict()
+ept_CAP256[1] = 156:163
+ept_CAP256[2] = 166:167
+ept_CAP256[3] = 169:170
+ept_CAP256[4] = 178:179
+ept_CAP256[5] = 181:184
+
+# 3L6:
+ept_3L6 = Dict()
+ept_3L6[1]=262:262
+ept_3L6[2]=295:297
+ept_3L6[3]=301:302
+ept_3L6[4]=323:323
+ept_3L6[5]=330:330
+ept_3L6[6]=332:332
+ept_3L6[7]=439:442
+ept_3L6[8]=444:446
+
+# 3D14_1E7:
+ept_3D14_1E7=Dict()
+ept_3D14_1E7[1]=63:65
+ept_3D14_1E7[2]=134:134
+ept_3D14_1E7[3]=156:156
+ept_3D14_1E7[4]=163:163
+ept_3D14_1E7[5]=168:173
+ept_3D14_1E7[6]=185:185
+ept_3D14_1E7[7]=192:194
+ept_3D14_1E7[8]=197:198
+ept_3D14_1E7[9]=206:207
+ept_3D14_1E7[10]=300:308
+ept_3D14_1E7[11]=318:318
+ept_3D14_1E7[12]=321:325
+ept_3D14_1E7[13]=368:368
+ept_3D14_1E7[14]=425:425
+ept_3D14_1E7[15]=428:430
+ept_3D14_1E7[16]=438:441
+
 function ref_coords(seq)
     rc = [1]
     for i in 2:length(seq)
@@ -322,6 +360,8 @@ end
 
     d, h, n = findxy(tree)
     adj = 0.1 * maximum(values(d))
+    adj <= 0.0 ? adj=0.1 : nothing
+    @show adj
     # tipannotations = map(x -> (d[x] + adj, h[x], x), getleafnames(tree))
     tip_numbers = (x->x.number).(tree.leaf)
     tip_names = (x->x.name).(tree.leaf)
@@ -502,8 +542,7 @@ in_paths = in_dir .* in_files
 
 work_dir = "working/"
 mkpath(work_dir)
-out_dir = "VRC01_induced_highlighter_plots/"
-mkpath(out_dir)
+out_dir = "highlighter_plots/"
 
 for in_path in in_paths[1:end]
     donor = basename(in_path)[1:6]
@@ -512,23 +551,28 @@ for in_path in in_paths[1:end]
     tree_file = work_dir * "$(donor).tree"
     rerooted_tree_file = work_dir * "$(donor)_rerooted.tree"
     plot_file = out_dir * "$(donor)_tree_highlighter.svg"
-    ept=ept_VRC01
-    ept_name="VRC01"
+    ept=ept_CAP256
+    ept_name="CAP256"
     title=""
     if isnothing(ept)
-        title = "\n $(donor) (full tree-highlighter plot)"
+        global out_dir = "$(ept_name)_full_highlighter_plots/"
+        mkpath(out_dir)
+        title = "$(donor) full highlighter plot \n at $(ept_name) epitope"
         plot_file = out_dir * "$(donor)_FULL_tree_highlighter.svg"
     else
-        title="\n $(donor) (tree-highlighter plot induced by epitope $(ept_name))"
+        global out_dir = "$(ept_name)_induced_highlighter_plots/"
+        mkpath(out_dir)
+        title="$(donor) induced highlighter plot \n at $(ept_name) epitope"
         plot_file = out_dir * "$(donor)_$(ept_name)_tree_highlighter.svg"
     end
     nam_ali, ref_ali = dropRefSequenceAndCollapseByVisit(in_path,col_path,ept=ept)
+    ept=ept_CAP256
     newickTree(col_path,tree_file )
     tree=reroot(tree_file,rerooted_tree_file)
     PhyloNetworks.resetnodenumbers!(tree; checkpreorder=true, type=:postorder)
     ladderize!(tree,getroot(tree))
     # global visits = sort(union((x->my_split(x,"_",2)).(tiplabels(tree)[1:end])))
-    pl=plot(tree, nam_ali, ref_ali, ept_VRC01, linecolor = :orange, linewidth = 3,
+    pl=plot(tree, nam_ali, ref_ali, ept_CAP256, linecolor = :orange, linewidth = 3,
         showtips = true, showtipmarkers=true, treetype = :dendrogramhighlighter, aligntips=true,
         title=title)
     savefig(pl,plot_file)

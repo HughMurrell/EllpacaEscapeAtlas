@@ -185,6 +185,8 @@ if abspath(PROGRAM_FILE) == @__FILE__
         svg1_path = ARGS[1]
         svg2_path = ARGS[2]
         output_path = ARGS[3]
+        ept_name=split(output_path,"_")[1]
+        mkpath(output_path)
         separation = length(ARGS) >= 4 ? parse(Int, ARGS[4]) : 50
 
         files_1 = readdir(svg1_path)
@@ -200,7 +202,7 @@ if abspath(PROGRAM_FILE) == @__FILE__
             if donor_1 == donor_2
                 donor = donor_1
                 @show donor 
-                combine_svg_plots(svg1_path*"/"*file_1, svg2_path*"/"*file_2, output_path*"/"*"$(donor).svg", 
+                combine_svg_plots(svg1_path*"/"*file_1, svg2_path*"/"*file_2, output_path*"/"*"$(donor)_$(ept_name).svg",
                     separation=separation)
             else
                 @error("files do not match")
