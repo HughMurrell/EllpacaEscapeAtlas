@@ -115,6 +115,13 @@ function getNameAnnotation(ept,ref_ali,nam_ali)
     return anot_dic, ept_annot
 end
 
+function consensus(seqs)
+    cons = join([mode([seqs[i][j]
+                    for i in 1:length(seqs)])
+                        for j in 1:length(seqs[1])])
+    return(cons)
+end
+
 function dropRefSequenceAndCollapseByVisit(in_file, out_file; nu=false, ept=nothing)
     stream = open(in_file)
     records = collect(FASTX.FASTA.Reader(stream))
@@ -126,6 +133,14 @@ function dropRefSequenceAndCollapseByVisit(in_file, out_file; nu=false, ept=noth
     close(stream)
     ref_seq=all_seqs[1]
     ref_nam=all_nams[1]
+    
+    # recompute consensus of first visit and store it
+    visits=sort(union((x->split(x,"_")[2][1:4]).(all_nams[3:end])))
+    first_inds = (x->split(x,"_")[2][1:4]==visits[1]).(all_nams[3:end])
+    consensus_of_first=consensus(all_seqs[3:end][first_inds])
+    all_nams[2]="consensus"
+    all_seqs[2]=consensus_of_first
+    
     stream = open(FASTA.Writer, out_file, append=false)
     cons_seq=all_seqs[2]
     cons_nam=all_nams[2]

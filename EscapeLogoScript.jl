@@ -3,6 +3,7 @@ Pkg.activate("./")
 Pkg.instantiate()
 
 using CSV, FASTX, DataFrames, Dates, BioSequences
+using StatsBase
 using Statistics: mean
 using Luxor
 using Colors
@@ -173,6 +174,14 @@ function nt_color(nt::Char)
     end
 end
 
+function visit_color(i)
+    all_colors = distinguishable_colors(20)
+    if ( isnothing(i) || i > 17 )
+        return(all_colors[1])
+    end
+    return(all_colors[i+3])
+end
+
 # third bio.jl
 
 aa_letters() = "ACDEFGHIKLMNPQRSTVWY-"
@@ -282,6 +291,8 @@ function luxor_sequence_logo_aa(ref_logo::Union{Nothing, SequenceLogo},
     text(title,Point(font_size,3*font_size))
     fontsize(font_size/2)
     for freq_ind in 1:length(freq_annots)
+        color_ind=1+length(freq_annots)-freq_ind
+        setcolor(visit_color(color_ind))
         text(freq_annots[freq_ind],Point(font_size,80+lh*freq_ind-font_size))
     end
     @show bot_annot
@@ -506,7 +517,7 @@ function generate_logo(fasta_path, ept, ept_name, outdir; file_count=0, prefix="
     @show(donor)
     records = collect(FASTX.FASTA.Reader(open(fasta_path)))
     all_seqs = (x->FASTX.sequence(String,x)).(records)
-    all_nams = FASTX.identifier.(records)
+    all_nams = String.(FASTX.identifier.(records))
     gapyness = (x->sum(collect(x).=='-')/length(x)).(all_seqs)
     @show gapyness[1], maximum(gapyness)
     sel_inds = gapyness .<= GAPPY_CUTOFF
@@ -515,6 +526,14 @@ function generate_logo(fasta_path, ept, ept_name, outdir; file_count=0, prefix="
     println("keeping $(sum(sel_inds)) out of $(length(all_seqs))")
     all_seqs=all_seqs[sel_inds]
     all_nams=all_nams[sel_inds]
+    
+    # recompute consensus of first visit and store it
+    visits=sort(union((x->split(x,"_")[2][1:4]).(all_nams[3:end])))
+    first_inds = (x->split(x,"_")[2][1:4]==visits[1]).(all_nams[3:end])
+    consensus_of_first=consensus(all_seqs[3:end][first_inds])
+    all_nams[2]="consensus of $(visits[1])"
+    all_seqs[2]=consensus_of_first
+    
     # close(fasta_path)
     # drop pool 6 sequences in ellpaca data
     # not_pool6=(x->!contains(x,"pool6")).(all_nams)
