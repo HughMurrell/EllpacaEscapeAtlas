@@ -18,9 +18,9 @@ ept_VRC01[6]=427:428
 ept_VRC01[7]=430:430
 ept_VRC01[8]=455:463
 ept_VRC01[9]=465:465
-ept_VRC01[10]=467:467
-ept_VRC01[11]=469:469
-ept_VRC01[12]=471:474
+# ept_VRC01[10]=467:467
+ept_VRC01[10]=469:469
+ept_VRC01[11]=471:474
 
 # CAP256 epitope
 ept_CAP256 = Dict()
@@ -102,15 +102,17 @@ function getNameAnnotation(ept,ref_ali,nam_ali)
     seqs= (seqs .* "|")
     # seqs[2:end] = (x->replace(x,"-"=>GAP)).(seqs[2:end])
 
+    # change the single space chars to enspace when using svg in three places below
+    ########### here is the svg enspace character " "  ##################
     seps = join([ ch=='|' ? '|' : ' ' for ch in seqs[2] ])
     max_nam_len = maximum( length.(all_nams) )
     anot_dic = Dict()
     for i in 1:length(all_nams)
         if i > 1
             inds = ( collect(seqs[1]) .== collect(seqs[i]) ) .& ( collect(seqs[1]) .!= '|')
-            seqs[i] = join( [ inds[j] ? " " : seqs[i][j] for j in 1:length(inds) ])
+            seqs[i] = join( [ inds[j] ? " " : seqs[i][j] for j in 1:length(inds) ])
         end
-        anot_dic[all_nams[i]] = all_nams[i] * repeat(" ", max_nam_len - length(all_nams[i]) + 1) * seqs[i]
+        anot_dic[all_nams[i]] = all_nams[i] * repeat(" ", max_nam_len - length(all_nams[i]) + 1) * seqs[i]
     end
     return anot_dic, ept_annot
 end
@@ -296,7 +298,7 @@ function insert_digit(ept_st,ept_anot,d)
             push!(ret_st, anots[i-start+1][d])
         end
     end
-    return replace(join(ret_st),"."=>" ")
+    return replace(join(ret_st),"."=>" ")        # here is the svg enspace character " ")
 end
 
 function my_parse(s;default=1)
@@ -392,7 +394,7 @@ end
     fw=adj # 0.001
     ept_pieces=split(anot_dic["consensus"],"|")
     ept_st=join( (s->repeat(".",length(s))).(ept_pieces), "|" )
-    ept_st_0=replace(ept_st, "."=>"—")
+    ept_st_0=replace(ept_st, "."=>"-")   # use this long hyphen for svg plots ("—")
     ept_st_1=insert_digit(ept_st,ept_anot,1)
     ept_st_2=insert_digit(ept_st,ept_anot,2)
     ept_st_3=insert_digit(ept_st,ept_anot,3)
@@ -557,7 +559,7 @@ in_paths = in_dir .* in_files
 
 work_dir = "working/"
 mkpath(work_dir)
-out_dir = "highlighter_plots/"
+out_dir = "highlighter_pdfs/"
 
 for in_path in in_paths[1:end]
     donor = basename(in_path)[1:6]
@@ -565,29 +567,29 @@ for in_path in in_paths[1:end]
     col_path = work_dir * "$(donor)_aa_alignment_noref_collapsed.fasta"
     tree_file = work_dir * "$(donor).tree"
     rerooted_tree_file = work_dir * "$(donor)_rerooted.tree"
-    plot_file = out_dir * "$(donor)_tree_highlighter.svg"
-    ept=ept_CAP256
-    ept_name="CAP256"
+    plot_file = out_dir * "$(donor)_tree_highlighter.pdf"
+    ept=ept_VRC01
+    ept_name="VRC01"
     title=""
     if isnothing(ept)
-        global out_dir = "$(ept_name)_full_highlighter_plots/"
+        global out_dir = "$(ept_name)_full_highlighter_pdfs/"
         mkpath(out_dir)
         title = "$(donor) full highlighter plot \n at $(ept_name) epitope"
-        plot_file = out_dir * "$(donor)_FULL_tree_highlighter.svg"
+        plot_file = out_dir * "$(donor)_FULL_tree_highlighter.pdf"
     else
-        global out_dir = "$(ept_name)_induced_highlighter_plots/"
+        global out_dir = "$(ept_name)_induced_highlighter_pdfs/"
         mkpath(out_dir)
         title="$(donor) induced highlighter plot \n at $(ept_name) epitope"
-        plot_file = out_dir * "$(donor)_$(ept_name)_tree_highlighter.svg"
+        plot_file = out_dir * "$(donor)_$(ept_name)_tree_highlighter.pdf"
     end
     nam_ali, ref_ali = dropRefSequenceAndCollapseByVisit(in_path,col_path,ept=ept)
-    ept=ept_CAP256
+    ept=ept_VRC01
     newickTree(col_path,tree_file )
     tree=reroot(tree_file,rerooted_tree_file)
     PhyloNetworks.resetnodenumbers!(tree; checkpreorder=true, type=:postorder)
     ladderize!(tree,getroot(tree))
     # global visits = sort(union((x->my_split(x,"_",2)).(tiplabels(tree)[1:end])))
-    pl=plot(tree, nam_ali, ref_ali, ept_CAP256, linecolor = :orange, linewidth = 3,
+    pl=plot(tree, nam_ali, ref_ali, ept, linecolor = :orange, linewidth = 3,
         showtips = true, showtipmarkers=true, treetype = :dendrogramhighlighter, aligntips=true,
         title=title)
     savefig(pl,plot_file)

@@ -1,0 +1,236 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{titlesec}
+\usepackage{titling}
+\usepackage{tocloft}
+\usepackage{fancyhdr}
+\usepackage{lmodern}
+\usepackage{pdfpages}
+\usepackage{multicol}
+% \usepackage{subfigure}
+% \usepackage[subfigure]{tocloft}
+\usepackage{hyperref}
+\usepackage[a3paper,landscape,left=1cm,right=1cm,top=1cm,bottom=2cm]{geometry}
+
+% Title page info
+\title{Ellpaca Escape Atlas}
+\author{uct hiv diversity group}
+\date{\today}
+
+% Section formatting
+\titleformat{\section}
+  {\normalfont\LARGE\bfseries}{\thesection}{1em}{}
+
+% Contents formatting
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+
+% Custom command to include chart and paired images for a given code
+\newcommand{\includecapall}[1]{%
+  \phantomsection
+  \addcontentsline{toc}{section}{#1}%
+  \includegraphics[width=\textwidth,height=0.95\textheight,keepaspectratio]{atlas_location_plots/#1_fanplot.pdf}%
+  \newpage
+  \includegraphics[width=\textwidth,height=0.95\textheight,keepaspectratio]{escape_charts/#1_escape.pdf}%
+  \newpage
+  %\noindent
+  % \begin{minipage}[t]{0.45\linewidth}
+  %   \vspace{0pt}
+  \includegraphics[width=\linewidth,height=0.95\textheight,keepaspectratio]{VRC01_escape_logo_pdfs/#1_VRC01_escape_logo.pdf}
+  \newpage
+  % \end{minipage}%
+ % \hfill
+ % \begin{minipage}[t]{0.45\linewidth}
+  %  \vspace{0pt}
+    \includegraphics[width=\linewidth,height=0.95\textheight,keepaspectratio]{CAP256_escape_logo_pdfs/#1_CAP256_escape_logo.pdf}
+  % \end{minipage}
+
+  % \newpage
+  % \noindent
+  % \begin{minipage}[t]{0.45\linewidth}
+  %   \vspace{0pt}
+  %   \includegraphics[width=\linewidth,height=0.95\textheight,keepaspectratio]{VRC01_induced_highlighter_pdfs/#1_VRC01_tree_highlighter.pdf}
+  % \end{minipage}%
+  % \hfill
+  % \begin{minipage}[t]{0.45\linewidth}
+  %   \vspace{0pt}
+  %   \includegraphics[width=\linewidth,height=0.95\textheight,keepaspectratio]{CAP256_induced_highlighter_pdfs/#1_CAP256_tree_highlighter.pdf}
+  % \end{minipage}
+  \clearpage
+}
+
+\begin{document}
+\setlength{\parindent}{0pt}
+\newgeometry{a3paper,landscape,left=3cm,right=3cm,top=3cm,bottom=3cm}
+
+% Title page (A3 landscape)
+\thispagestyle{empty}
+\begin{titlepage}
+    \vspace*{5cm}
+    \makebox[\textwidth][c]{\fontsize{80}{80}\selectfont\bfseries Ellpaca Escape Atlas}
+    \vspace{8cm}
+    \makebox[\textwidth][c]{\fontsize{60}{60}\selectfont uct hiv diversity group}
+    \vspace{3cm}
+    \makebox[\textwidth][c]{\fontsize{40}{45}\selectfont Date: \today}
+\end{titlepage}
+
+% Abstract (two columns, full width)
+\vspace{2cm}
+\makebox[\textwidth][c]{\fontsize{60}{70}\selectfont\bfseries Prologue}
+\vspace{2cm}
+\setlength{\columnsep}{2cm}
+\begin{multicols}{2}
+{\fontsize{24}{26}\selectfont
+This Atlas provides a rough overview of dominant escaping Amino Acids
+across the whole ENV molecule for each patient in the Ellpaca cohort.
+Dominant escaping AAs are consensus AAs for each patient sample that 
+are different from the consensus AAs of the {\bf first} sample of that patient.
+Consensus is computed after alignment to the HXB2 reference. 
+Each chart has {\bf epitopes} of interest highlighted in different colours. 
+Regions of interest such as {\bf v-loops} are also highlighted. 
+It is hoped that the charts may reveal new epitopes to explore at greater depth.
+\vfill\null
+\columnbreak
+For each patient in the Ellpaca cohort, the Atlas provides an overview of
+where that patient's samples occur on the Ellpaca tree and this is followed
+by an escape chart for the whole env molecule and then followed by 
+escape logos for each epitope of interest. The charts are A3 Landscape PDFs 
+with one chart per page. The index of charts at the start of the atlas are 
+hyperlinked to allow the reader to jump to a chart of interest.
+\vfill\null
+}
+\end{multicols}
+\newpage
+
+% Table of contents (A3 landscape, four columns, gap between columns, full width)
+\vspace{2cm}
+\makebox[\textwidth][c]{\fontsize{60}{70}\selectfont Escape Chart Index}
+\vspace{2cm}
+\setlength{\columnsep}{2cm}
+\begin{multicols*}{6}
+{\fontsize{18}{18}\selectfont
+\input{EscapeAtlas.toc}
+% \tableofcontents
+}
+\end{multicols*}
+\restoregeometry
+
+% Start page numbering from 1 for the first image page
+% \setcounter{page}{3}
+\pagenumbering{arabic}
+
+% --- GENERATED SECTIONS ---
+
+% Automatically generated PDF inclusions:
+
+\clearpage
+
+\includecapall{CAP008}
+\includecapall{CAP037}
+\includecapall{CAP040}
+\includecapall{CAP045}
+\includecapall{CAP061}
+\includecapall{CAP065}
+\includecapall{CAP069}
+\includecapall{CAP085}
+\includecapall{CAP088}
+\includecapall{CAP177}
+\includecapall{CAP188}
+\includecapall{CAP200}
+\includecapall{CAP206}
+\includecapall{CAP210}
+\includecapall{CAP211}
+\includecapall{CAP217}
+\includecapall{CAP221}
+\includecapall{CAP222}
+\includecapall{CAP225}
+\includecapall{CAP228}
+\includecapall{CAP229}
+\includecapall{CAP237}
+\includecapall{CAP239}
+\includecapall{CAP244}
+\includecapall{CAP248}
+\includecapall{CAP255}
+\includecapall{CAP256}
+\includecapall{CAP257}
+\includecapall{CAP261}
+\includecapall{CAP264}
+\includecapall{CAP265}
+\includecapall{CAP266}
+\includecapall{CAP267}
+\includecapall{CAP268}
+\includecapall{CAP271}
+\includecapall{CAP275}
+\includecapall{CAP276}
+\includecapall{CAP277}
+\includecapall{CAP279}
+\includecapall{CAP280}
+\includecapall{CAP282}
+\includecapall{CAP283}
+\includecapall{CAP284}
+\includecapall{CAP286}
+\includecapall{CAP287}
+\includecapall{CAP288}
+\includecapall{CAP290}
+\includecapall{CAP292}
+\includecapall{CAP294}
+\includecapall{CAP295}
+\includecapall{CAP296}
+\includecapall{CAP297}
+\includecapall{CAP298}
+\includecapall{CAP299}
+\includecapall{CAP303}
+\includecapall{CAP304}
+\includecapall{CAP305}
+\includecapall{CAP307}
+\includecapall{CAP309}
+\includecapall{CAP311}
+\includecapall{CAP312}
+\includecapall{CAP314}
+\includecapall{CAP315}
+\includecapall{CAP316}
+\includecapall{CAP319}
+\includecapall{CAP322}
+\includecapall{CAP325}
+\includecapall{CAP327}
+\includecapall{CAP329}
+\includecapall{CAP330}
+\includecapall{CAP331}
+\includecapall{CAP332}
+\includecapall{CAP335}
+\includecapall{CAP336}
+\includecapall{CAP337}
+\includecapall{CAP338}
+\includecapall{CAP339}
+\includecapall{CAP341}
+\includecapall{CAP342}
+\includecapall{CAP344}
+\includecapall{CAP347}
+\includecapall{CAP349}
+\includecapall{CAP351}
+\includecapall{CAP355}
+\includecapall{CAP356}
+\includecapall{CAP357}
+\includecapall{CAP359}
+\includecapall{CAP360}
+\includecapall{CAP361}
+\includecapall{CAP362}
+\includecapall{CAP364}
+\includecapall{CAP365}
+\includecapall{CAP368}
+\includecapall{CAP370}
+\includecapall{CAP372}
+\includecapall{CAP377}
+\includecapall{CAP378}
+\includecapall{CAP379}
+\includecapall{CAP380}
+\includecapall{CAP382}
+\includecapall{CAP383}
+\includecapall{CAP407}
+\includecapall{CAP409}
+\includecapall{CAP425}
+\includecapall{CAP426}
+\includecapall{CAP429}
+\includecapall{CAP430}
+\includecapall{CAP437}
+
+\end{document}

@@ -615,7 +615,7 @@ function generate_logo(fasta_path, ept, ept_name, outdir; file_count=0, prefix="
         push!(freq_annots, freq_annot)
     end
 
-    path_svg="$(outdir)$(donor)_$(ept_name)_escape_logo.pdf"
+    path_svg="$(outdir)$(donor)_$(ept_name)_escape_logo.svg"
         
     title="$(donor) escape at $(ept_name) epitope"
        
@@ -637,7 +637,7 @@ end
 Julia wrapper for mafft.
 """
 function my_mafft(inpath, outpath)
-    cmd = `mafft-fftns --quiet --thread 2 --ep 2 --op 3 --out $outpath $inpath`
+    cmd = `mafft-fftns --quiet --thread 2 --ep 3 --op 5 --localpair --out $outpath $inpath`
     println(cmd)
     run(cmd)
 end
@@ -672,7 +672,7 @@ function pad_description(description)
     return(desc)
 end
             
-function my_ungap(s::String)
+function ungap(s::String)
     return replace(s,"-"=>"")
 end
             
@@ -733,9 +733,9 @@ ept_VRC01[6]=427:428
 ept_VRC01[7]=430:430
 ept_VRC01[8]=455:463
 ept_VRC01[9]=465:465
-# ept_VRC01[10]=467:467
-ept_VRC01[10]=469:469
-ept_VRC01[11]=471:474
+ept_VRC01[10]=467:467
+ept_VRC01[11]=469:469
+ept_VRC01[12]=471:474
 
 # CAP256 epitope
 ept_CAP256 = Dict()
@@ -775,30 +775,252 @@ ept_3D14_1E7[14]=425:425
 ept_3D14_1E7[15]=428:430
 ept_3D14_1E7[16]=438:441
 
+epitopes = Dict()
+epitopes["VRC01"]=ept_VRC01
+epitopes["CAP256"]=ept_CAP256
+epitopes["3L6"]=ept_3L6
+epitopes["3D14_1E7"]=ept_3D14_1E7
 
+epitope_colors = Dict()
+epitope_colors["VRC01"]="lightgreen"
+epitope_colors["CAP256"]="coral"
+epitope_colors["3L6"]="thistle"
+epitope_colors["3D14_1E7"]="lightcyan"
 
+v_loops = Dict()
+v_loops[1] = 130:156
+v_loops[2] = 157:196
+v_loops[3] = 296:331
+v_loops[4] = 385:418
+v_loops[5] = 460:470
 
-###################### script starts here #############################
-println()
-println("USAGE: julia escapelogos.jl alignments_dir logos_dir")
-println("where alignments_dir is an existing directory holding your fasta AA alignments")
-println("and logos_dir is a directory that will contain your escape logos after the run")
-println()
+v_loop_colors = Dict()
+v_loop_colors[1] = "pink"
+v_loop_colors[2] = "bisque"
+v_loop_colors[3] = "aquamarine"
+v_loop_colors[4] = "navajowhite"
+v_loop_colors[5] = "tan"
 
-##################### override epitope settings here ####################
+###################### MaxEscatpe starts here ######################
 
-ept = ept_VRC01
-ept_name = "VRC01"
+using Luxor, Random
 
-########################## set GAPPY_CUTOFF cutoff here ############################
-# 1.0 keeps all sequences, try 0.05 here to get rid of sequences with > 5% gapyness
+function drawmatrix(AA::Matrix, V::Vector, donor::String; fs=16,
+            epitope_names=[], epitope_colors=Dict(), epitope_coords=Dict(),
+            v_loop_colors=Dict(), v_loop_coords=Dict(),
+            cellsize = (fs, fs) )
 
-const GAPPY_CUTOFF = 1.0 # 0.05
+    nrow=size(AA)[1]
+    ncol=size(AA)[2]
+    chunks = vcat(collect(1:180:ncol),[ncol+1])
+    ref_ind=0
+    col_ind=0
+    background("white")
+    tab11=Point(0,0)
+    
+    for i in 2:length(chunks)
+        A = AA[:,chunks[i-1]:chunks[i]-1]
+        table = Table(size(A)..., cellsize...)
+        
+        if i == 2
+            tab11=table[1,1]
+            Luxor.translate(-table[1,1]+Point(6*fs,6*fs))
+            gsave()
+            s=1
+            ll=sum(length.(epitope_names))+length(epitope_names)
+            legend = Table(1,ll,cellsize[1],cellsize[2])
+            Luxor.translate(table[1,s] - legend[1,s] + Point(2*fs,-3*fs))
+            
+            for epn in epitope_names
+                sethue(epitope_colors[epn])
+                for j in 1:length(epn)
+                    box(legend, 1, s+j-1, action = :fill)
+                end
+                sethue("black")
+                fontsize(fs)
+                text(epn,legend[1,s],halign=:left,valign=:middle)
+                s=s+length(epn)+1
+            end
+            grestore()
+            
+            gsave()
+            s=1
+            n_loops=length(keys(v_loop_colors))
+            ll=5*n_loops
+            legend = Table(1,ll,cellsize[1],cellsize[2])
+            Luxor.translate(table[1,s+40] - legend[1,s] + Point(2*fs,-3*fs))
+            
+            for i in 1:n_loops
+                sethue(v_loop_colors[i])
+                for j in 1:4
+                    box(legend, 1, s+j-1, action = :fill)
+                end
+                sethue("black")
+                fontsize(fs)
+                text("V$(i)",legend[1,s+1],halign=:left,valign=:middle)
+                s=s+4+1
+            end
+            grestore()
+        else
+            Luxor.translate(Point(0.0,(nrow+4)*fs)+(tab11-table[1,1]))
+        end
 
-# produce logo plots for each alignment file showing escape from
-# consensus at tp1, for all timepoints
-#
+        fontsize(fs)
+        sethue("black")
+        text(donor, table[1,1] - Point(fs,fs),
+            halign=:right,
+            valign=:middle)
+        fontsize(2*fs/3)
+        for j in 1:length(V)
+            if j==1
+                sethue("black")
+            elseif j==2
+                sethue("red")
+            elseif j==3
+                sethue("green")
+            else
+                sethue("blue")
+            end
+            text(V[j], table[j,1] - Point(fs,0.0),
+                halign=:right,
+                valign=:middle)
+                # angle=-π/2)
+        end
+            
+        for i in CartesianIndices(A)
+            r, c = Tuple(i)
+            
+            sethue("white")
+            for ept_name in epitope_names
+                if r>2 && col_ind + c in epitope_coords[ept_name]
+                    sethue(epitope_colors[ept_name])
+                end
+            end
+            for loop in keys(v_loop_coords)
+                if r<3 && col_ind + c in v_loop_coords[loop]
+                    sethue(v_loop_colors[loop])
+                end
+            end
+            box(table, r, c, action = :fill)
+            
+            if r==1
+                if A[r+1,c]!='-'
+                    ref_ind += 1
+                    sethue("black")
+                    fontsize(fs/2)
+                    text(string(ref_ind), table[r,c],
+                        halign=:centre,
+                        valign=:middle)
+                    sethue("gray80")
+                    box(table, r, c, action = :stroke)
+                else
+                    sethue("black")
+                    text("-", table[r,c],
+                        halign=:centre,
+                        valign=:middle)
+                    sethue("gray80")
+                    box(table, r, c, action = :stroke)
+                end
+            else
+                if r==2
+                    sethue("red")
+                elseif r==3
+                    sethue("green")
+                else
+                    sethue("blue")
+                end
+                fontsize(fs)
+                text(string(A[r, c]), table[r, c],
+                    halign=:centre,
+                    valign=:middle)
+                sethue("gray80")
+                box(table, r, c, action = :stroke)
+            end
+        end
+        col_ind += size(A)[2]
+    end
+end
+
+function escape_plot(in_file, out_dir)
+
+    # read the input file
+    records = collect(FASTX.FASTA.Reader(open(in_file)))
+    all_seqs = (x->FASTX.sequence(String,x)).(records)
+    all_nams = String.(FASTX.identifier.(records))
+    
+    ref_seq=all_seqs[1]
+    
+    # first convert the reference into glyfs
+    glyfs = vcat(collect(repeat(' ',length(all_seqs[1]))), collect(all_seqs[1]))
+    
+    # get donor and visit ids
+    donor = basename(in_file)[1:6]
+    @show donor
+    visits=sort(union((x->split(x,"_")[2][1:4]).(all_nams[3:end])))
+    first_inds = (x->split(x,"_")[2][1:4]==visits[1]).(all_nams[3:end])
+    consensus_of_first_visit=consensus(all_seqs[3:end][first_inds])
+    
+    exp_fv = collect(consensus_of_first_visit)
+    glyfs = vcat(glyfs, exp_fv)
+
+    for i in 2:length(visits)
+        inds = (x->split(x,"_")[2][1:4]==visits[i]).(all_nams[3:end])
+        exp_nv = collect( consensus(all_seqs[3:end][inds]) )
+        sames = ( exp_fv .== exp_nv )
+        exp_nv[sames] .= ' '
+        glyfs = vcat(glyfs,exp_nv)
+    end
+    
+    rows=length(visits) + 2
+    cols=length(consensus_of_first_visit)
+    # @show rows, cols, rows * cols, length(glyfs)
+    
+    A = reshape(glyfs, cols, rows)
+    A = permutedims(A, [2, 1])
+    
+    mf = 12
  
+    V=vcat(["co-ords","HXB2"],visits)
+    
+    ept_names=[]
+    ept_coords=Dict()
+    
+    for ept_name in keys(epitopes)
+        ept = epitopes[ept_name]
+        ec = vcat( collect.([ offset(ref_seq,ept[key]) for key in keys(ept) ])... )
+        ept_coords[ept_name] = ec
+        push!(ept_names,ept_name)
+    end
+    
+    v_loop_coords=Dict()
+    for loop in keys(v_loops)
+        ept = v_loops[loop]
+        ec = collect(offset(ref_seq,v_loops[loop]))
+        v_loop_coords[loop] = ec
+    end
+    
+    # height = mf * size(A)[1] + 2*mf*8
+    # width = mf * size(A)[2] + 2*mf*16
+    # Drawing(width, height, out_dir * donor * "_escape.svg")
+    Drawing("A1landscape", out_dir * donor * "_escape.pdf")
+
+    # Luxor.translate(width, height)
+    fontsize(8)
+    setline(0.5)
+    sethue("white")
+    drawmatrix(A, V, donor, fs=mf,
+            epitope_names = ept_names,
+            epitope_colors = epitope_colors,
+            epitope_coords = ept_coords,
+            v_loop_colors = v_loop_colors,
+            v_loop_coords = v_loop_coords)
+
+    finish()
+    return
+end
+
+################################# script to generate escape map of entire env molecule #####
+
 in_dir = "alignments/"
 if length(ARGS) > 0
     in_dir=ARGS[1]
@@ -815,21 +1037,79 @@ if length(filepaths) == 0
     exit()
 end
 
-out_dir="$(ept_name)_escape_logo_pdfs/"
+out_dir="escape_charts/"
 if length(ARGS) > 1
     out_dir=ARGS[2]
     endswith(out_dir,"/") ? nothing : out_dir=out_dir*"/"
 end
 mkpath(out_dir)
 
-count=0
-for filepath in filepaths[1:end]
-    println(filepath)
-    global count+=1
-    generate_logo(filepath, ept, ept_name, out_dir, file_count=count, prefix="")
+for in_file in filepaths[1:end]
+    escape_plot(in_file, out_dir)
 end
 
-@show count
-
 exit()
+
+################################# script to align all consensuses ##########################
+
+in_dir = "alignments/"
+if length(ARGS) > 0
+    in_dir=ARGS[1]
+    endswith(in_dir,"/") ? nothing : in_dir=in_dir*"/"
+end
+if ! isdir(in_dir)
+    println("ERROR: alignment directory, $(in_dir) does not exist")
+    exit()
+end
+filepaths = readdir(in_dir)
+filepaths = in_dir .* filepaths[(x->endswith(x,".fasta")).(filepaths)]
+if length(filepaths) == 0
+    println("ERROR: no fasta files in $(in_dir)")
+    exit()
+end
+
+out_dir="alignment_of_consensuses/"
+if length(ARGS) > 1
+    out_dir=ARGS[2]
+    endswith(out_dir,"/") ? nothing : out_dir=out_dir*"/"
+end
+mkpath(out_dir)
+
+out_file = out_dir * "ellpaca_consensuses.fasta"
+out_file_ali = out_dir * "ellpaca_consensuses_aligned.fasta"
+
+my_write_fasta(out_file,[],names=[],aa=true,append=false)
+ref_written = false
+
+count=0
+for in_file in filepaths[1:end]
+    global count+=1
+    println(count, " -> ", in_file)
+    
+    # read the input file
+    records = collect(FASTX.FASTA.Reader(open(in_file)))
+    all_seqs = (x->FASTX.sequence(String,x)).(records)
+    all_nams = String.(FASTX.identifier.(records))
+    
+    if ! ref_written
+        my_write_fasta(out_file,[ungap(all_seqs[1])],names=[all_nams[1]],aa=true,append=true)
+        global ref_written = true
+    end
+    
+    # get donor and visit ids
+    donor = basename(in_file)[1:6]
+    @show donor
+    visits=sort(union((x->split(x,"_")[2][1:4]).(all_nams[3:end])))
+    for i in 1:length(visits)
+        @show i, visits[i]
+        inds = (x->split(x,"_")[2][1:4]==visits[i]).(all_nams[3:end])
+        cons = consensus(all_seqs[3:end][inds])
+        my_write_fasta(out_file,[ungap(cons)],names=[donor*"_"*visits[i]],aa=true,append=true)
+    end
+end
+
+my_mafft(out_file,out_file_ali)
+    
+exit()
+
 
