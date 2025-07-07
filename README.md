@@ -1,15 +1,16 @@
 # EllpacaEscapeAtlas
 
-Here we generate highlighter plots and escape logos for the Ellpca alignments
-and then combine them into one svg plot per donor:
+Here we generate annotated Ellpaca tree, highlighter charts and 
+escape logos for each donor Ellpaca functional alignment,
+and then combine them into one document using LaTex.
 
 First, install `julia` and the relavent packages as usual then
-edit `HighlighterScript.jl` and `EscapeLogoScript.jl` scripts to 
-select the appropriate epitope and input and output directories 
-and then run the scripts as follows:
+edit the three scripts below to select the appropriate input and 
+output directories and then run the scripts as follows:
 
 ```
-julia HighlighterScript.jl
-julia EscapeLogoScript.jl
-julia combine_svg_plots.jl CAP256_induced_highlighter_plots CAP256_escape_logo_plots CAP256_induced_combined_plots 20
+julia EllpacaTreeScript.jl
+julia EscapeAtlasScript.jl
+julia EscapeLogoScript.jl  # run this one for each epitope
+pdflatex EscapeAtlas.tex
 ```
