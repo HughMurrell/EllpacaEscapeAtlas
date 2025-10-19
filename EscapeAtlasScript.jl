@@ -954,24 +954,25 @@ function escape_plot(in_file, out_dir)
     glyfs = vcat(collect(repeat(' ',length(all_seqs[1]))), collect(all_seqs[1]))
     
     # get donor and visit ids
-    donor = basename(in_file)[1:6]
+    donor = string(split(basename(in_file),"_")[2])
     @show donor
-    visits=sort(union((x->split(x,"_")[2][1:4]).(all_nams[3:end])))
-    first_inds = (x->split(x,"_")[2][1:4]==visits[1]).(all_nams[3:end])
-    consensus_of_first_visit=consensus(all_seqs[3:end][first_inds])
+    visits=sort(union((x->split(x,"_")[3][1:4]).(all_nams[3:end])))
+    # first_inds = (x->split(x,"_")[3][1:4]==visits[1]).(all_nams[3:end])
+    # consensus_of_first_visit=consensus(all_seqs[3:end][first_inds])
+    consensus_of_first_visit=all_seqs[2]
     
     exp_fv = collect(consensus_of_first_visit)
     glyfs = vcat(glyfs, exp_fv)
 
-    for i in 2:length(visits)
-        inds = (x->split(x,"_")[2][1:4]==visits[i]).(all_nams[3:end])
+    for i in 1:length(visits)
+        inds = (x->split(x,"_")[3][1:4]==visits[i]).(all_nams[3:end])
         exp_nv = collect( consensus(all_seqs[3:end][inds]) )
         sames = ( exp_fv .== exp_nv )
         exp_nv[sames] .= ' '
         glyfs = vcat(glyfs,exp_nv)
     end
     
-    rows=length(visits) + 2
+    rows=length(visits) + 3
     cols=length(consensus_of_first_visit)
     # @show rows, cols, rows * cols, length(glyfs)
     
@@ -980,7 +981,7 @@ function escape_plot(in_file, out_dir)
     
     mf = 12
  
-    V=vcat(["co-ords","HXB2"],visits)
+    V=vcat(["co-ords","HXB2","Cons C"],visits)
     
     ept_names=[]
     ept_coords=Dict()
@@ -1048,68 +1049,6 @@ for in_file in filepaths[1:end]
     escape_plot(in_file, out_dir)
 end
 
-exit()
-
-################################# script to align all consensuses ##########################
-
-in_dir = "alignments/"
-if length(ARGS) > 0
-    in_dir=ARGS[1]
-    endswith(in_dir,"/") ? nothing : in_dir=in_dir*"/"
-end
-if ! isdir(in_dir)
-    println("ERROR: alignment directory, $(in_dir) does not exist")
-    exit()
-end
-filepaths = readdir(in_dir)
-filepaths = in_dir .* filepaths[(x->endswith(x,".fasta")).(filepaths)]
-if length(filepaths) == 0
-    println("ERROR: no fasta files in $(in_dir)")
-    exit()
-end
-
-out_dir="alignment_of_consensuses/"
-if length(ARGS) > 1
-    out_dir=ARGS[2]
-    endswith(out_dir,"/") ? nothing : out_dir=out_dir*"/"
-end
-mkpath(out_dir)
-
-out_file = out_dir * "ellpaca_consensuses.fasta"
-out_file_ali = out_dir * "ellpaca_consensuses_aligned.fasta"
-
-my_write_fasta(out_file,[],names=[],aa=true,append=false)
-ref_written = false
-
-count=0
-for in_file in filepaths[1:end]
-    global count+=1
-    println(count, " -> ", in_file)
-    
-    # read the input file
-    records = collect(FASTX.FASTA.Reader(open(in_file)))
-    all_seqs = (x->FASTX.sequence(String,x)).(records)
-    all_nams = String.(FASTX.identifier.(records))
-    
-    if ! ref_written
-        my_write_fasta(out_file,[ungap(all_seqs[1])],names=[all_nams[1]],aa=true,append=true)
-        global ref_written = true
-    end
-    
-    # get donor and visit ids
-    donor = basename(in_file)[1:6]
-    @show donor
-    visits=sort(union((x->split(x,"_")[2][1:4]).(all_nams[3:end])))
-    for i in 1:length(visits)
-        @show i, visits[i]
-        inds = (x->split(x,"_")[2][1:4]==visits[i]).(all_nams[3:end])
-        cons = consensus(all_seqs[3:end][inds])
-        my_write_fasta(out_file,[ungap(cons)],names=[donor*"_"*visits[i]],aa=true,append=true)
-    end
-end
-
-my_mafft(out_file,out_file_ali)
-    
 exit()
 
 

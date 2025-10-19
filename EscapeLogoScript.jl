@@ -513,7 +513,7 @@ end
 
 
 function generate_logo(fasta_path, ept, ept_name, outdir; file_count=0, prefix="")
-    donor=basename(fasta_path)[1:6]
+    donor=split(basename(fasta_path),"_")[2]
     @show(donor)
     records = collect(FASTX.FASTA.Reader(open(fasta_path)))
     all_seqs = (x->FASTX.sequence(String,x)).(records)
@@ -528,11 +528,13 @@ function generate_logo(fasta_path, ept, ept_name, outdir; file_count=0, prefix="
     all_nams=all_nams[sel_inds]
     
     # recompute consensus of first visit and store it
-    visits=sort(union((x->split(x,"_")[2][1:4]).(all_nams[3:end])))
-    first_inds = (x->split(x,"_")[2][1:4]==visits[1]).(all_nams[3:end])
-    consensus_of_first=consensus(all_seqs[3:end][first_inds])
-    all_nams[2]="consensus of $(visits[1])"
-    all_seqs[2]=consensus_of_first
+    visits=sort(union((x->split(x,"_")[3][1:4]).(all_nams[3:end])))
+    first_inds = (x->split(x,"_")[3][1:4]==visits[1]).(all_nams[3:end])
+    consensus_of_first=all_seqs[2]
+    consensus_name=all_nams[2]
+    # consensus_of_first=consensus(all_seqs[3:end][first_inds])
+    # all_nams[2]="consensus of $(visits[1])"
+    # all_seqs[2]=consensus_of_first
     
     # close(fasta_path)
     # drop pool 6 sequences in ellpaca data
@@ -586,8 +588,8 @@ function generate_logo(fasta_path, ept, ept_name, outdir; file_count=0, prefix="
     rest_nams=all_nams[3:end]  # use 3:end for ellpaca
     rest_seqs=seqs[3:end]   # use 3:end for ellpaca
     fvsc=0
-    visits=union((x->split(x,"_")[2][1:4]).(rest_nams))
-    fvsc=sum([ string(split(nm,"_")[2][1:4]) == string(visits[1]) for nm in rest_nams ])
+    visits=union((x->split(x,"_")[3][1:4]).(rest_nams))
+    fvsc=sum([ string(split(nm,"_")[3][1:4]) == string(visits[1]) for nm in rest_nams ])
         # visits=union((x->x[12:12]).(rest_nams)) # for ellpaca
         # fvsc=sum([ string(nm[12:12]) == visits[1] for nm in rest_nams ])
     @show visits
@@ -598,7 +600,7 @@ function generate_logo(fasta_path, ept, ept_name, outdir; file_count=0, prefix="
     freq_annots=[]
     for visit in visits
         sel_ind = [ ]
-        sel_ind = [ split(nm,"_")[2][1:4] == visit for nm in rest_nams ]
+        sel_ind = [ split(nm,"_")[3][1:4] == visit for nm in rest_nams ]
         # sel_ind = [ string(nm[12:12]) == visit for nm in rest_nams ]
         lvsc = sum(sel_ind)
         X = (x->max(x,0)).(reshape(reduce(hcat, onehot.(rest_seqs[sel_ind])), 
@@ -624,7 +626,8 @@ function generate_logo(fasta_path, ept, ept_name, outdir; file_count=0, prefix="
                 annot=ept_annot,
                 title=title, 
                 # ref_annot="$(all_nams[1][1:15])",
-                bot_annot=" Consensus at $(visits[1]) ($(fvsc))",
+                # bot_annot=" Consensus at $(visits[1]) ($(fvsc))",
+                bot_annot=" " * consensus_name,
                 freq_annots=reverse(freq_annots));
             
     return(pf)
@@ -787,8 +790,13 @@ println()
 
 ##################### override epitope settings here ####################
 
-ept = ept_VRC01
-ept_name = "VRC01"
+# ept = ept_VRC01
+# ept_name = "VRC01"
+# ept = ept_CAP256
+# ept_name = "Cap256"
+
+epts = [ept_VRC01,ept_CAP256]
+ept_names = ["VRC01", "Cap256"]
 
 ########################## set GAPPY_CUTOFF cutoff here ############################
 # 1.0 keeps all sequences, try 0.05 here to get rid of sequences with > 5% gapyness
@@ -798,6 +806,8 @@ const GAPPY_CUTOFF = 1.0 # 0.05
 # produce logo plots for each alignment file showing escape from
 # consensus at tp1, for all timepoints
 #
+
+for (ept, ept_name) in zip(epts, ept_names)
  
 in_dir = "alignments/"
 if length(ARGS) > 0
@@ -825,11 +835,13 @@ mkpath(out_dir)
 count=0
 for filepath in filepaths[1:end]
     println(filepath)
-    global count+=1
+    count+=1
     generate_logo(filepath, ept, ept_name, out_dir, file_count=count, prefix="")
 end
 
 @show count
+
+end
 
 exit()
 

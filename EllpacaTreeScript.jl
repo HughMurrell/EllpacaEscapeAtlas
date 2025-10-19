@@ -12,11 +12,13 @@ using Phylo, Plots
 ################# functions for generating alignments ##########################
 
 function my_mafft(inpath, outpath)
-    cmd = `mafft-fftns --thread 2 --ep 3 --op 5 --localpair --out $outpath $inpath`
-    run(cmd)
+    # cmd = `mafft-fftns --thread 2 --ep 3 --op 5 --localpair --out $outpath $inpath`
+    # run(cmd)
     # mafft-fftns() do exe
     #     run(`$exe --thread 2 --ep 3 --op 5 --localpair --out $outpath $inpath`)
     # end
+    cmd = `$(mafft_fftns()) --quiet --thread 2 --ep 2 --op 3 --out $(outpath) $(inpath) `
+    run(cmd)
 end
 
 function newickTree(seq_file, tree_file; nu=false)
@@ -205,12 +207,12 @@ if ! isfile(out_file_ali)
         end
     
         # get donor and visit ids
-        donor = basename(in_file)[1:6]
+        donor = split(basename(in_file),"_")[2]
         @show donor
-        visits=sort(union((x->split(x,"_")[2][1:4]).(all_nams[3:end])))
+        visits=sort(union((x->split(x,"_")[3][1:4]).(all_nams[3:end])))
         for i in 1:length(visits)
             @show i, visits[i]
-            inds = (x->split(x,"_")[2][1:4]==visits[i]).(all_nams[3:end])
+            inds = (x->split(x,"_")[3][1:4]==visits[i]).(all_nams[3:end])
             cons = consensus(all_seqs[3:end][inds])
             my_write_fasta(out_file,[ungap(cons)],names=[donor*"_"*visits[i]],aa=true,append=true)
         end

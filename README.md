@@ -1,6 +1,7 @@
 # EllpacaEscapeAtlas
 
-Here we generate annotated Ellpaca tree, highlighter charts and 
+
+Here we generate annotated Ellpaca trees, alignment charts and 
 escape logos for each donor Ellpaca functional alignment,
 and then combine them into one document using LaTex.
 
@@ -11,6 +12,6 @@ output directories and then run the scripts as follows:
 ```
 julia EllpacaTreeScript.jl
 julia EscapeAtlasScript.jl
-julia EscapeLogoScript.jl  # run this one for each epitope
-pdflatex EscapeAtlas.tex
+julia EscapeLogoScript.jl  # check that this one runs for each epitope
+pdflatex EscapeAtlas.tex # run this one twice
 ```
